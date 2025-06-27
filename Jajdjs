@@ -1,0 +1,130 @@
+class PasajeroViaje {
+    private $idViaje;
+    private $pDocumento;
+    private $activo;
+    private $mensajeOperacion;
+
+    public function __construct($idViaje = "", $pDocumento = "", $activo = 1) {
+        $this->idViaje = $idViaje;
+        $this->pDocumento = $pDocumento;
+        $this->activo = $activo;
+    }
+
+    // Getters y Setters
+    public function getIdViaje() { return $this->idViaje; }
+    public function setIdViaje($idViaje) { $this->idViaje = $idViaje; }
+
+    public function getPDocumento() { return $this->pDocumento; }
+    public function setPDocumento($pDocumento) { $this->pDocumento = $pDocumento; }
+
+    public function getActivo() { return $this->activo; }
+    public function setActivo($activo) { $this->activo = $activo; }
+
+    public function getMensajeOperacion() { return $this->mensajeOperacion; }
+    public function setMensajeOperacion($mensaje) { $this->mensajeOperacion = $mensaje; }
+
+    // Insertar nuevo registro
+    public function insertar() {
+        $base = new BaseDatos();
+        $resp = false;
+        $query = "INSERT INTO pasajeroviaje (idviaje, pdocumento, activo) 
+                  VALUES (" . $this->getIdViaje() . ", '" . $this->getPDocumento() . "', " . $this->getActivo() . ")";
+        if ($base->Iniciar()) {
+            if ($base->Ejecutar($query)) {
+                $resp = true;
+            } else {
+                $this->setMensajeOperacion($base->getError());
+            }
+        } else {
+            $this->setMensajeOperacion($base->getError());
+        }
+        return $resp;
+    }
+
+    // Borrado lógico
+    public function eliminar() {
+        $base = new BaseDatos();
+        $resp = false;
+        $query = "UPDATE pasajeroviaje 
+                  SET activo = 0 
+                  WHERE idviaje = " . $this->getIdViaje() . " 
+                    AND pdocumento = '" . $this->getPDocumento() . "'";
+        if ($base->Iniciar()) {
+            if ($base->Ejecutar($query)) {
+                $resp = true;
+            } else {
+                $this->setMensajeOperacion($base->getError());
+            }
+        } else {
+            $this->setMensajeOperacion($base->getError());
+        }
+        return $resp;
+    }
+
+    // Borrado físico
+    public function eliminarFisico() {
+        $base = new BaseDatos();
+        $resp = false;
+        $query = "DELETE FROM pasajeroviaje 
+                  WHERE idviaje = " . $this->getIdViaje() . " 
+                    AND pdocumento = '" . $this->getPDocumento() . "'";
+        if ($base->Iniciar()) {
+            if ($base->Ejecutar($query)) {
+                $resp = true;
+            } else {
+                $this->setMensajeOperacion($base->getError());
+            }
+        } else {
+            $this->setMensajeOperacion($base->getError());
+        }
+        return $resp;
+    }
+
+    // Listar registros
+    public function listar($condicion = "") {
+        $base = new BaseDatos();
+        $consulta = "SELECT * FROM pasajeroviaje";
+        if ($condicion != "") {
+            $consulta .= " WHERE " . $condicion;
+        }
+        $res = [];
+        if ($base->Iniciar()) {
+            if ($base->Ejecutar($consulta)) {
+                while ($row = $base->Registro()) {
+                    $obj = new PasajeroViaje();
+                    $obj->setIdViaje($row['idviaje']);
+                    $obj->setPDocumento($row['pdocumento']);
+                    $obj->setActivo($row['activo']);
+                    array_push($res, $obj);
+                }
+            } else {
+                $this->setMensajeOperacion($base->getError());
+            }
+        } else {
+            $this->setMensajeOperacion($base->getError());
+        }
+        return $res;
+    }
+
+    // Cargar un registro específico (opcional)
+    public function cargar() {
+        $base = new BaseDatos();
+        $query = "SELECT * FROM pasajeroviaje 
+                  WHERE idviaje = " . $this->getIdViaje() . " 
+                    AND pdocumento = '" . $this->getPDocumento() . "'";
+        $resp = false;
+        if ($base->Iniciar()) {
+            if ($base->Ejecutar($query)) {
+                if ($row = $base->Registro()) {
+                    $this->setActivo($row['activo']);
+                    $resp = true;
+                }
+            } else {
+                $this->setMensajeOperacion($base->getError());
+            }
+        } else {
+            $this->setMensajeOperacion($base->getError());
+        }
+        return $resp;
+    }
+}
