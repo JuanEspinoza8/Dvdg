@@ -1,0 +1,52 @@
+public function insertar() {
+    $base = new BaseDatos();
+    $resp = false;
+
+    if ($base->Iniciar()) {
+        // 1. Verificar si ya está asignado
+        $queryExiste = "SELECT * FROM pasajeroviaje 
+                        WHERE idviaje = {$this->getIdViaje()} 
+                          AND pdocumento = '{$this->getPDocumento()}' 
+                          AND activo = 1";
+        if ($base->Ejecutar($queryExiste) && $base->Registro()) {
+            $this->setMensajeOperacion("El pasajero ya está asignado a este viaje.");
+            return false;
+        }
+
+        // 2. Verificar capacidad máxima del viaje
+        $queryOcupados = "SELECT COUNT(*) AS total FROM pasajeroviaje 
+                          WHERE idviaje = {$this->getIdViaje()} AND activo = 1";
+        if (!$base->Ejecutar($queryOcupados)) {
+            $this->setMensajeOperacion($base->getError());
+            return false;
+        }
+        $ocupados = $base->Registro()['total'];
+
+        // Traer viaje para conocer su capacidad máxima
+        $viaje = new Viaje();
+        $viaje->setIdViaje($this->getIdViaje());
+
+        if (!$viaje->cargar()) {
+            $this->setMensajeOperacion("No se pudo cargar el viaje para verificar la capacidad.");
+            return false;
+        }
+
+        if ($ocupados >= $viaje->getCantMaxPasajeros()) {
+            $this->setMensajeOperacion("El viaje ya está completo ({$ocupados}/{$viaje->getCantMaxPasajeros()}).");
+            return false;
+        }
+
+        // 3. Insertar si hay espacio
+        $queryInsertar = "INSERT INTO pasajeroviaje (idviaje, pdocumento, activo) 
+                          VALUES ({$this->getIdViaje()}, '{$this->getPDocumento()}', 1)";
+        if ($base->Ejecutar($queryInsertar)) {
+            $resp = true;
+        } else {
+            $this->setMensajeOperacion($base->getError());
+        }
+    } else {
+        $this->setMensajeOperacion($base->getError());
+    }
+
+    return $resp;
+}
